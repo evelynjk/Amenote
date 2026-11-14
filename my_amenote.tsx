@@ -338,6 +338,7 @@ export default function App() {
   const [toast, setToast] = useState('');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
 
   useEffect(() => {
     localStorage.setItem('amenote_entries_v2', JSON.stringify(entries));
@@ -350,6 +351,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('amenote_ddays_v2', JSON.stringify(ddays));
   }, [ddays]);
+
+  // 입력창 높이를 내용 줄 수에 맞춰 자동으로 조절 (한 줄 ~ 최대 6줄)
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 144)}px`;
+  }, [inputText]);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -1168,7 +1177,7 @@ export default function App() {
         {/* ================================================================== */}
         {activeTab === 'records' && (
           <main>
-            {/* 한 줄 미니멀 입력바 */}
+            {/* 미니멀 입력바 (엔터 줄바꿈 지원) */}
             <form
               onSubmit={handleAddEntry}
               className="bg-white border border-[#EAE5DC] rounded-2xl px-3.5 py-2 mb-4 shadow-2xs"
@@ -1190,13 +1199,14 @@ export default function App() {
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
+              <div className="flex items-end gap-2">
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="지금 떠오르는 생각이나 일정을 남겨보세요..."
-                  className="flex-1 text-sm bg-transparent text-[#3D352E] placeholder-[#B0A699] focus:outline-none py-1.5"
+                  className="flex-1 text-sm bg-transparent text-[#3D352E] placeholder-[#B0A699] focus:outline-none py-1.5 resize-none leading-relaxed overflow-y-auto"
                 />
 
                 <input
