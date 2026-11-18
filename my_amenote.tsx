@@ -26,7 +26,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 const isSupabaseConfigured =
-  SUPABASE_URL.startsWith('http') && 
+  SUPABASE_URL.startsWith('http') &&
   Boolean(SUPABASE_ANON_KEY) &&
   !SUPABASE_ANON_KEY.startsWith('sb_publishable_');
 
@@ -603,7 +603,7 @@ export default function App() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin
+        redirectTo: 'https://amenote-pi.vercel.app'
       }
     });
     if (error) {
