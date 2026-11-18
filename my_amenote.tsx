@@ -20,14 +20,14 @@ import {
 } from 'lucide-react';
 
 // ==========================================
-// 0. Supabase 클라이언트 초기화 (표준 anon 키 사용)
+// 0. Supabase 클라이언트 초기화 (Vercel 환경 변수 연동)
 // ==========================================
-const SUPABASE_URL = 'https://hmxtgtqwbiihjdlerabq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // 본인의 실제 eyJ로 시작하는 anon 키를 넣어주세요!
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 const isSupabaseConfigured =
   SUPABASE_URL.startsWith('http') && 
-  SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY' &&
+  Boolean(SUPABASE_ANON_KEY) &&
   !SUPABASE_ANON_KEY.startsWith('sb_publishable_');
 
 const supabase = isSupabaseConfigured
@@ -1392,4 +1392,590 @@ export default function App() {
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="지금 떠오르는 생각이나 일정을 남겨보세요..."
-                  className="flex-1 text-sm bg-transparent text
+                  className="flex-1 text-sm bg-transparent text-[#3D352E] placeholder-[#B0A699] focus:outline-none py-1.5 resize-none leading-relaxed overflow-y-auto"
+                />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="사진 첨부"
+                  className="w-8 h-8 flex items-center justify-center rounded-xl border border-[#EAE5DC] text-[#7A634C] hover:bg-[#F5F0E8] transition-colors shrink-0"
+                >
+                  <ImageIcon className="w-4 h-4" strokeWidth={1.75} />
+                </button>
+                <button
+                  type="submit"
+                  title="기록 저장"
+                  className="w-8 h-8 flex items-center justify-center rounded-xl border border-[#EAE5DC] text-[#7A634C] hover:bg-[#F5F0E8] transition-colors shrink-0"
+                >
+                  <Check className="w-4 h-4" strokeWidth={1.75} />
+                </button>
+              </div>
+            </form>
+
+            {dailyEntries.length === 0 ? (
+              <div className="text-center py-12 text-xs text-[#A69B8D]">
+                이 날에 남겨진 첫 번째 기록을 적어보세요.
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {dailyEntries.map((entry) => {
+                  const isEditing = editingEntryId === entry.id;
+                  return (
+                    <div key={entry.id} className="flex items-start gap-2.5">
+                      <span className="text-[11px] text-[#9C8F80] pt-2.5 w-11 shrink-0 text-right font-medium tabular-nums">
+                        {entry.time}
+                      </span>
+                      <div className="flex-1 bg-white border border-[#EAE5DC] rounded-2xl px-3.5 py-2.5 shadow-2xs">
+                        {entry.image && (
+                          <img
+                            src={entry.image}
+                            alt="첨부 이미지"
+                            onDoubleClick={() => setLightboxEntry(entry)}
+                            title="더블클릭하여 크게 보기 및 다운로드"
+                            className="w-full max-h-72 object-cover rounded-xl mb-2 border border-[#F0ECE3] cursor-pointer"
+                          />
+                        )}
+                        {isEditing ? (
+                          <div className="space-y-2">
+                            <textarea
+                              value={editEntryText}
+                              onChange={(e) => setEditEntryText(e.target.value)}
+                              rows={3}
+                              className="w-full text-sm text-[#3D352E] bg-[#FAF8F5] border border-[#DFD8CC] rounded-xl p-2 focus:outline-none"
+                            />
+                            <div className="flex justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setEditingEntryId(null)}
+                                className="px-2.5 py-1 text-xs text-[#8C7F70] hover:text-[#3D352E] rounded-lg"
+                              >
+                                취소
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => saveEntryEdit(entry.id)}
+                                className="px-3 py-1 text-xs bg-[#7A634C] text-white rounded-lg"
+                              >
+                                저장
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            {entry.verseLine && (
+                              <div className="border-l-2 border-[#7A634C] pl-2.5 mb-2 text-xs text-[#5C4F42] leading-relaxed">
+                                {entry.verseLine}
+                              </div>
+                            )}
+                            {/* 본문 텍스트와 수정/삭제 버튼을 우측 끝(한 줄)으로 정렬 */}
+                            <div className="flex items-start justify-between gap-3">
+                              {entry.text && (
+                                <p className="flex-1 text-sm text-[#3D352E] not-italic leading-relaxed whitespace-pre-wrap break-words">
+                                  {entry.text}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => startEditingEntry(entry)}
+                                  title="수정"
+                                  className="text-[#B0A699] hover:text-[#7A634C] transition-colors p-0.5"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" strokeWidth={1.75} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteEntry(entry.id)}
+                                  title="삭제"
+                                  className="text-[#B0A699] hover:text-[#B85C5C] transition-colors p-0.5"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </main>
+        )}
+
+        {/* TAB 2: 말씀과 기도 */}
+        {activeTab === 'prayer' && (
+          <main>
+            <div className="bg-white border border-[#EAE5DC] rounded-2xl p-4 mb-4 shadow-2xs">
+              <label className="block text-xs font-semibold text-[#5C4F42] mb-2">
+                기도 제목을 넣어주세요.
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={prayerTopicInput}
+                  onChange={(e) => setPrayerTopicInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleGeneratePrayer();
+                    }
+                  }}
+                  placeholder="예: 나쁜 말을 하지 않게 기도, OO의 대학 합격"
+                  className="flex-1 text-xs bg-[#FAF8F5] border border-[#EAE5DC] rounded-xl px-3 py-2.5 text-[#3D352E] placeholder-[#B0A699] focus:outline-none focus:border-[#C8B9A6]"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleGeneratePrayer()}
+                  className="px-3 py-2.5 bg-[#7A634C] text-white text-xs font-medium rounded-xl hover:bg-[#66523E] transition-colors shrink-0"
+                >
+                  당신을 위한 기도문
+                </button>
+              </div>
+              <div className="mt-3.5 pt-3 border-t border-[#F3EFE8]">
+                <p className="text-[11px] text-[#8C7F70] mb-2">오늘 마음 상태로 기도하기</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {QUICK_HASHTAGS.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleGeneratePrayer(tag)}
+                      className="px-2.5 py-1 bg-[#FAF8F5] border border-[#EAE5DC] rounded-full text-xs text-[#6E5D4F] hover:bg-[#F1ECE4] hover:border-[#D5C9B8] transition-colors"
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {dailyPrayers.length === 0 ? (
+              <div className="text-center py-10 px-4 bg-white/60 border border-dashed border-[#DFD8CE] rounded-2xl">
+                <p className="text-sm text-[#7C7368]">이 날에 생성된 기도문이 없습니다.</p>
+                <p className="text-xs text-[#A89F94] mt-1">
+                  위 입력창에 기도 제목을 적거나 마음상태 해시태그를 눌러보세요.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {dailyPrayers.map((prayerItem) => {
+                  const isEditingPrayer = editingPrayerId === prayerItem.id;
+                  return (
+                    <div key={prayerItem.id} className="flex items-start gap-2.5">
+                      <div className="w-11 pt-3 text-right shrink-0">
+                        <span className="text-[11px] font-medium text-[#9C8F80] tabular-nums">
+                          {prayerItem.time}
+                        </span>
+                      </div>
+                      <article className="flex-1 bg-white border border-[#EAE5DC] rounded-2xl p-3.5 shadow-2xs space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-xs font-semibold text-[#8C6D53] shrink-0">
+                              당신을 위한 기도문
+                            </span>
+                            <span className="text-[#D5CCC0]">·</span>
+                            <span className="text-xs text-[#7C7368] truncate">
+                              {prayerItem.title}
+                            </span>
+                          </div>
+                          {!isEditingPrayer && (
+                            <button
+                              type="button"
+                              onClick={() => exportPrayerToTimeline(prayerItem)}
+                              className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#EAE5DC] bg-[#FAF8F5] text-[#8C6D53] hover:bg-[#8C7F70] hover:text-white text-xs font-medium transition"
+                            >
+                              <Plus className="w-3 h-3" strokeWidth={2} />
+                              <span>기록에 넣기</span>
+                            </button>
+                          )}
+                        </div>
+
+                        {isEditingPrayer ? (
+                          <div className="space-y-2">
+                            <div className="space-y-1.5 bg-[#FAF8F5] p-2.5 rounded-xl border border-[#EAE5DC]">
+                              <input
+                                type="text"
+                                value={editPrayerVerse}
+                                onChange={(e) => setEditPrayerVerse(e.target.value)}
+                                placeholder="성경 말씀"
+                                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-[#D8CEC0] bg-white text-[#3D352E] focus:outline-none"
+                              />
+                              <input
+                                type="text"
+                                value={editPrayerRef}
+                                onChange={(e) => setEditPrayerRef(e.target.value)}
+                                placeholder="성경 출처 (예: 잠언 16:3)"
+                                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-[#D8CEC0] bg-white text-[#8C6D53] focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <textarea
+                                rows={3}
+                                value={editPrayerText}
+                                onChange={(e) => setEditPrayerText(e.target.value)}
+                                className="w-full p-2.5 text-sm rounded-xl border border-[#D8CEC0] bg-[#FAF8F5] text-[#3D352E] focus:outline-none leading-relaxed"
+                              />
+                              <div className="flex items-center justify-end gap-1 mt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingPrayerId(null)}
+                                  className="px-2.5 py-1 rounded-lg text-xs text-[#7C7368] hover:bg-[#FAF8F5] border border-[#EAE5DC]"
+                                >
+                                  취소
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => savePrayerEdit(prayerItem.id)}
+                                  className="px-2.5 py-1 rounded-lg text-xs bg-[#7A634C] text-white font-medium"
+                                >
+                                  저장
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {prayerItem.verse && (
+                              <div className="bg-[#FAF8F5] border border-[#F0ECE4] rounded-xl px-3 py-2 text-xs text-[#3D352E] leading-relaxed">
+                                <span>&ldquo;{prayerItem.verse}&rdquo;</span>
+                                {prayerItem.reference && (
+                                  <span className="font-semibold text-[#8C6D53] ml-1.5">
+                                    ({prayerItem.reference})
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            <div>
+                              <div className="w-full border-l-2 border-[#7A634C] pl-3 py-0.5">
+                                <p className="text-sm text-[#3D352E] not-italic leading-relaxed whitespace-pre-line">
+                                  {prayerItem.text}
+                                </p>
+                              </div>
+                              <div className="flex items-center justify-end gap-1.5 mt-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => startEditingPrayer(prayerItem)}
+                                  title="기도문 수정"
+                                  className="p-0.5 text-[#B0A699] hover:text-[#7A634C] transition"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" strokeWidth={1.75} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => deletePrayerHistoryItem(prayerItem.id)}
+                                  title="기도문 삭제"
+                                  className="p-0.5 text-[#B0A699] hover:text-[#B85C5C] transition"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                                </button>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </article>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </main>
+        )}
+      </div>
+
+      {/* 로그인 모달 */}
+      {isAuthModalOpen && (
+        <div
+          onClick={() => setIsAuthModalOpen(false)}
+          className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white border border-[#EAE5DC] rounded-3xl w-full max-w-sm p-6 shadow-xl space-y-4"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-[#3D352E]">클라우드 동기화 계정</h3>
+                <p className="text-xs text-[#8C7F70] mt-0.5">
+                  로그인하면 맥북과 아이폰에서 기록이 실시간 연동됩니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAuthModalOpen(false)}
+                className="p-1 text-[#8C7F70] hover:text-[#3D352E]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {session ? (
+              <div className="space-y-4 pt-2">
+                <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#EAE5DC] text-xs space-y-1">
+                  <span className="text-[#8C7F70] block">현재 연동된 계정</span>
+                  <span className="font-semibold text-[#3D352E] block">{session.user.email}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full py-2.5 flex items-center justify-center gap-1.5 rounded-xl border border-[#E5C9C9] bg-[#FAF0F0] text-[#B85C5C] text-xs font-medium hover:bg-[#F5E2E2] transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>로그아웃</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3.5">
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  className="w-full py-2.5 px-4 flex items-center justify-center gap-2 rounded-xl border border-[#EAE5DC] bg-white hover:bg-[#FAF8F5] text-xs font-medium text-[#3D352E] transition-colors shadow-2xs"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.911-3.88-3.05-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24Z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14Z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96Z"
+                    />
+                  </svg>
+                  <span>Google 계정으로 계속하기</span>
+                </button>
+                <div className="relative flex py-1 items-center">
+                  <div className="flex-grow border-t border-[#F0ECE4]"></div>
+                  <span className="flex-shrink mx-2 text-[10.5px] text-[#B0A699]">또는 이메일로</span>
+                  <div className="flex-grow border-t border-[#F0ECE4]"></div>
+                </div>
+                <form onSubmit={handleEmailAuth} className="space-y-2.5">
+                  <div className="relative flex items-center">
+                    <Mail className="absolute left-3 w-3.5 h-3.5 text-[#B0A699]" />
+                    <input
+                      type="email"
+                      required
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      placeholder="이메일 주소"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-[#EAE5DC] bg-[#FAF8F5] text-xs text-[#3D352E] focus:outline-none focus:border-[#7A634C]"
+                    />
+                  </div>
+                  <div className="relative flex items-center">
+                    <Lock className="absolute left-3 w-3.5 h-3.5 text-[#B0A699]" />
+                    <input
+                      type="password"
+                      required
+                      value={passwordInput}
+                      onChange={(e) => setPasswordInput(e.target.value)}
+                      placeholder="비밀번호"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-[#EAE5DC] bg-[#FAF8F5] text-xs text-[#3D352E] focus:outline-none focus:border-[#7A634C]"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-[#7A634C] text-white text-xs font-medium rounded-xl hover:bg-[#66523E] transition-colors"
+                  >
+                    {isSignUp ? '무료 계정 만들기' : '이메일로 로그인'}
+                  </button>
+                </form>
+                <div className="text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsSignUp(!isSignUp)}
+                    className="text-[11px] text-[#8C6D53] hover:underline"
+                  >
+                    {isSignUp
+                      ? '이미 계정이 있으신가요? 로그인하기'
+                      : '계정이 없으신가요? 무료 회원가입'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 이미지 확대 모달 */}
+      {lightboxEntry && (
+        <div
+          onClick={() => setLightboxEntry(null)}
+          className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-2xl flex items-center justify-end gap-2 mb-3"
+          >
+            <button
+              type="button"
+              onClick={handleDownloadLightboxImage}
+              title="사진 다운로드"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/25 text-white transition"
+            >
+              <Download className="w-4 h-4" strokeWidth={1.75} />
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteLightboxImage}
+              title="사진 삭제"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/15 hover:bg-[#B85C5C]/80 text-white transition"
+            >
+              <Trash2 className="w-4 h-4" strokeWidth={1.75} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setLightboxEntry(null)}
+              title="닫기"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/25 text-white transition"
+            >
+              <X className="w-4 h-4" strokeWidth={1.75} />
+            </button>
+          </div>
+          <img
+            onClick={(e) => e.stopPropagation()}
+            src={lightboxEntry.image}
+            alt="확대 이미지"
+            className="max-w-full max-h-[80vh] rounded-2xl object-contain shadow-2xl"
+          />
+        </div>
+      )}
+
+      {/* D-Day 설정 모달 */}
+      {isDdayModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/35 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#EAE5DC] rounded-2xl w-full max-w-sm p-5 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-[#3D352E]">D-Day 설정</h3>
+                <p className="text-[11px] text-[#8C7F70] mt-0.5">
+                  최대 3개, 각 8자 이내 ({ddays.length}/3)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDdayModalOpen(false);
+                  setEditingDdayId(null);
+                }}
+                className="p-1 text-[#8C7F70] hover:text-[#3D352E]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {sortedDdays.length > 0 && (
+              <div className="space-y-1.5">
+                {sortedDdays.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-xs ${
+                      editingDdayId === item.id
+                        ? 'border-[#7A634C] bg-[#FAF8F5]'
+                        : 'border-[#EAE5DC] bg-[#FAF8F5]/60'
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <span className="font-semibold text-[#7A634C]">
+                        {formatSingleDdayLabel(item)}
+                      </span>
+                      <span className="block text-[10.5px] text-[#8C7F70]">{item.date}</span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => openDdayModal(item)}
+                        title="수정"
+                        className="p-1 rounded-lg text-[#8C7F70] hover:text-[#3D352E] hover:bg-white transition"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeDday(item.id)}
+                        title="삭제"
+                        className="p-1 rounded-lg text-[#8C7F70] hover:text-[#B85C5C] hover:bg-white transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {(editingDdayId || ddays.length < 3) && (
+              <form onSubmit={saveDday} className="space-y-3 pt-2 border-t border-[#F0ECE4]">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-[#3D352E]">
+                    {editingDdayId ? '디데이 수정' : '새 디데이 추가'}
+                  </span>
+                  {editingDdayId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingDdayId(null);
+                        setDdayTitleInput('');
+                        setDdayDateInput(todayStr);
+                      }}
+                      className="text-[11px] text-[#8C7F70] hover:underline"
+                    >
+                      새로 추가하기
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] text-[#8C7F70]">목표 제목 (최대 8자)</label>
+                    <span className="text-[10.5px] text-[#8C7F70]">{ddayTitleInput.length}/8</span>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    maxLength={8}
+                    value={ddayTitleInput}
+                    onChange={(e) => setDdayTitleInput(e.target.value.slice(0, 8))}
+                    placeholder="예: 한국가는날!"
+                    className="w-full px-3 py-2 rounded-xl border border-[#EAE5DC] bg-[#FAF8F5] text-xs text-[#3D352E] focus:outline-none focus:border-[#7A634C]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-[#8C7F70] mb-1">목표 날짜</label>
+                  <input
+                    type="date"
+                    required
+                    value={ddayDateInput}
+                    onChange={(e) => setDdayDateInput(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-[#EAE5DC] bg-[#FAF8F5] text-xs text-[#3D352E] focus:outline-none focus:border-[#7A634C]"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-2.5 bg-[#7A634C] text-white text-xs font-medium rounded-xl hover:bg-[#66523E] transition-colors"
+                >
+                  {editingDdayId ? '수정 완료' : 'D-Day 추가하기'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#3D352E] text-white text-xs px-4 py-2.5 rounded-full shadow-md z-50">
+          {toast}
+        </div>
+      )}
+    </div>
+  );
+}
