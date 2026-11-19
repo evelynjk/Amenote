@@ -230,10 +230,71 @@ const MOOD_PRAYER_DATA = {
       reference: '이사야 43:19',
       prayer: '창조주 하나님, 지나간 아쉬움에 매이지 않고 주님이 행하실 새 일을 바라봅니다. 광야에 길을 내시는 주님의 능력을 신뢰하오니, 기대하는 마음으로 오늘을 성실히 살아가게 하소서. 예수님 이름으로 기도합니다. 아멘.'
     }
+  ],
+  불안: [
+    {
+      verse: '너희 염려를 다 주께 맡기라 이는 그가 너희를 돌보심이라',
+      reference: '베드로전서 5:7',
+      prayer: '돌보시는 하나님, 앞날과 마음속을 채우는 불안을 주님 손에 온전히 맡깁니다. 제 힘으로 감당하려 애쓰던 염려를 내려놓게 하시고, 세밀하게 돌보시는 주님의 품 안에서 흔들리지 않는 평안을 누리게 하소서. 예수님 이름으로 기도합니다. 아멘.'
+    },
+    {
+      verse: '내가 여호와께 구하매 내게 응답하시고 내 모든 두려움에서 나를 건지셨도다',
+      reference: '시편 34:4',
+      prayer: '구원의 주님, 마음을 짓누르는 불안과 두려움에서 저를 건져주소서. 어둠 속에서도 함께하시는 주님을 바라보게 하시고, 염려의 자리 대신 주님을 신뢰하는 담대한 평강으로 채워주소서. 예수님 이름으로 기도합니다. 아멘.'
+    }
+  ],
+  용서: [
+    {
+      verse: '서로 친절하게 하며 불쌍히 여기며 서로 용서하기를 하나님이 그리스도 안에서 너희를 용서하심과 같이 하라',
+      reference: '에베소서 4:32',
+      prayer: '용서와 사랑의 주님, 마음속에 남아 있던 서운함과 응어리를 주님 앞에 내려놓습니다. 주님이 저를 먼저 용서하신 은혜를 기억하게 하시고, 자유롭고 따뜻한 마음으로 용서하며 화평을 이루게 하소서. 예수님 이름으로 기도합니다. 아멘.'
+    },
+    {
+      verse: '너희가 사람의 잘못을 용서하면 너희 하늘 아버지께서도 너희 잘못을 용서하시려니와',
+      reference: '마태복음 6:14',
+      prayer: '자비로우신 하나님, 제 마음을 무겁게 누르던 미움과 원망을 풀어낼 수 있는 은혜를 주소서. 상처를 붙잡기보다 주님의 사랑으로 품게 하시고, 제 영혼이 먼저 자유와 평안을 얻게 하소서. 예수님 이름으로 기도합니다. 아멘.'
+    }
+  ],
+  기쁨: [
+    {
+      verse: '항상 기뻐하라',
+      reference: '데살로니가전서 5:16',
+      prayer: '기쁨의 근원이신 하나님, 제 마음에 주님으로 인한 참된 기쁨을 부어주소서. 환경의 변화에 흔들리지 않고 구원의 감격과 은혜를 기억하며, 오늘 하루 환한 기쁨으로 살아가게 하소서. 예수님 이름으로 기도합니다. 아멘.'
+    },
+    {
+      verse: '여호와를 기뻐하는 것이 너희의 힘이니라',
+      reference: '느헤미야 8:10',
+      prayer: '힘이 되시는 주님, 주님을 기뻐하는 마음이 제 삶의 새 힘이 되게 하소서. 작은 웃음과 은혜의 순간들을 놓치지 않게 하시고, 기쁨의 에너지로 오늘을 감사히 걸어가게 하소서. 예수님 이름으로 기도합니다. 아멘.'
+    }
+  ],
+  인내: [
+    {
+      verse: '인내를 온전히 이루라 이는 너희로 온전하고 구비하여 조금도 부족함이 없게 하려 함이라',
+      reference: '야고보서 1:4',
+      prayer: '오래 참으시는 주님, 더디게 느껴지는 시간 속에서도 조급해하지 않고 주님의 때를 기다리는 인내를 주소서. 기다림의 과정을 통해 제 마음이 더욱 단단하고 성숙하게 빚어지게 하소서. 예수님 이름으로 기도합니다. 아멘.'
+    },
+    {
+      verse: '우리가 선을 행하되 낙심하지 말지니 포기하지 아니하면 때가 이르매 거두리라',
+      reference: '갈라디아서 6:9',
+      prayer: '신실하신 하나님, 눈에 보이는 열매가 없어도 묵묵히 순종하며 끝까지 포기하지 않을 힘을 주소서. 주님의 때에 반드시 거두게 하실 선한 결실을 믿으며 오늘의 자리를 성실히 지키게 하소서. 예수님 이름으로 기도합니다. 아멘.'
+    }
   ]
 };
 
-const QUICK_HASHTAGS = ['감사', '회개', '믿음', '좌절', '평안', '지혜', '위로', '소망'];
+const QUICK_HASHTAGS = [
+  '감사',
+  '회개',
+  '믿음',
+  '좌절',
+  '평안',
+  '지혜',
+  '위로',
+  '소망',
+  '불안',
+  '용서',
+  '기쁨',
+  '인내'
+];
 
 // ==========================================
 // 3. 주제 맞춤형 구체적 기도문 & 다양한 성경 말씀 생성 엔진
@@ -522,11 +583,9 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // [수정 6] 로그인 시 기기(localStorage)에 남아있던 오프라인 작성 데이터를 자동으로 클라우드로 업로드 후 병합
   useEffect(() => {
     if (!supabase || !session) return;
     async function syncAndLoadCloudData() {
-      // 1. 기기에만 저장된 로컬 데이터 확인 및 클라우드 업로드
       try {
         const localEntries = JSON.parse(localStorage.getItem('amenote_v1_entries') || '[]');
         if (localEntries.length > 0) {
@@ -576,7 +635,6 @@ export default function App() {
         }
       } catch {}
 
-      // 2. 클라우드에서 최신 전체 데이터 불러오기
       const { data: entData } = await supabase
         .from('amenote_entries')
         .select('*')
@@ -590,7 +648,8 @@ export default function App() {
             type: e.type,
             text: e.text,
             image: e.image,
-            verseLine: e.verse_line
+            verseLine: e.verse_line,
+            completed: Boolean(e.completed)
           }))
         );
       }
@@ -714,7 +773,6 @@ export default function App() {
     showToast('로그아웃 되었습니다');
   };
 
-  // [수정 3] 공유 시 제목이나 슬로건 없이 오직 주소(URL)만 전달되도록 수정
   const handleShareAppLink = async () => {
     const appUrl = window.location.origin;
     if (navigator.share) {
@@ -775,7 +833,8 @@ export default function App() {
       time: getCurrentTimeString(),
       type: 'note',
       text: inputText.trim(),
-      image: pendingImage
+      image: pendingImage,
+      completed: false
     };
     if (supabase && session) {
       const { data, error } = await supabase
@@ -793,6 +852,22 @@ export default function App() {
     }
     setInputText('');
     setPendingImage(null);
+  };
+
+  // [수정] 오늘의 기록 완료(취소선) 토글
+  const toggleEntryComplete = async (entry) => {
+    const nextCompleted = !Boolean(entry.completed);
+    setEntries((prev) =>
+      prev.map((item) => (item.id === entry.id ? { ...item, completed: nextCompleted } : item))
+    );
+    if (supabase && session) {
+      try {
+        await supabase
+          .from('amenote_entries')
+          .update({ completed: nextCompleted })
+          .eq('id', entry.id);
+      } catch {}
+    }
   };
 
   const startEditingEntry = (entry) => {
@@ -833,7 +908,6 @@ export default function App() {
     showToast('기록이 삭제되었습니다');
   };
 
-  // [수정 4] 아이폰에서도 갤러리에 바로 저장할 수 있도록 공유 시트(이미지 저장) 및 Blob 다운로드 지원
   const handleDownloadLightboxImage = async () => {
     if (!lightboxEntry?.image) return;
     const fileName = `my_Amenote_${lightboxEntry.date}_${lightboxEntry.id}.jpg`;
@@ -842,7 +916,6 @@ export default function App() {
       const blob = await response.blob();
       const file = new File([blob], fileName, { type: blob.type || 'image/jpeg' });
 
-      // 모바일(아이폰 등)에서는 공유 시트를 통해 '이미지 저장'을 누르면 사진첩(갤러리)에 바로 저장됨
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
@@ -851,7 +924,6 @@ export default function App() {
         return;
       }
 
-      // PC 및 일반 브라우저에서는 Blob URL로 파일 다운로드
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
@@ -982,7 +1054,8 @@ export default function App() {
       type: 'prayer',
       verseLine: verseWithRef,
       text: prayerItem.text,
-      image: null
+      image: null,
+      completed: false
     };
     if (supabase && session) {
       const { data, error } = await supabase
@@ -1210,7 +1283,6 @@ export default function App() {
               <h1 className="text-[22px] sm:text-2xl font-medium tracking-tight text-[#3D352E] leading-tight whitespace-nowrap">
                 my Amenote
               </h1>
-              {/* [수정 1] 아이폰 화면에서도 슬로건이 줄바꿈 없이 한 줄로 나오도록 whitespace-nowrap 및 크기 조정 */}
               <p className="text-[11px] sm:text-xs font-normal text-[#8C7F70] mt-0.5 tracking-tight whitespace-nowrap">
                 my day. my story. my prayer.
               </p>
@@ -1297,7 +1369,6 @@ export default function App() {
                     onClick={() => setSelectedDate(item.date)}
                     className="inline-flex items-center px-2 py-0.5 rounded-full bg-white border border-[#EAE5DC] text-[#8C6D53] hover:border-[#C7B9A7] transition text-[10.5px] font-medium whitespace-nowrap"
                   >
-                    {/* [수정 5] D-day 앞 타겟 아이콘 삭제 */}
                     <span>{formatSingleDdayLabel(item)}</span>
                   </button>
                 ))}
@@ -1505,6 +1576,7 @@ export default function App() {
                 {dailyEntries.map((entry) => {
                   const isEditing = editingEntryId === entry.id;
                   const isPrayerCard = entry.type === 'prayer' || Boolean(entry.verseLine);
+                  const isCompleted = Boolean(entry.completed);
                   return (
                     <div key={entry.id} className="flex items-start gap-2.5">
                       <span className="text-[11px] text-[#9C8F80] pt-2.5 w-11 shrink-0 text-right font-medium tabular-nums">
@@ -1546,7 +1618,6 @@ export default function App() {
                             </div>
                           </div>
                         ) : isPrayerCard ? (
-                          /* [수정 2] 기도문 '오늘의 기록' 카드는 수정/삭제 버튼이 본문 우측 하단에 배치 */
                           <div>
                             {entry.verseLine && (
                               <div className="border-l-2 border-[#7A634C] pl-2.5 mb-2 text-xs text-[#5C4F42] leading-relaxed">
@@ -1554,11 +1625,29 @@ export default function App() {
                               </div>
                             )}
                             {entry.text && (
-                              <p className="text-sm text-[#3D352E] not-italic leading-relaxed whitespace-pre-wrap break-words">
+                              <p
+                                className={`text-sm not-italic leading-relaxed whitespace-pre-wrap break-words transition-colors ${
+                                  isCompleted
+                                    ? 'line-through text-[#A89F94]'
+                                    : 'text-[#3D352E]'
+                                }`}
+                              >
                                 {entry.text}
                               </p>
                             )}
                             <div className="flex items-center justify-end gap-1.5 mt-1.5">
+                              <button
+                                type="button"
+                                onClick={() => toggleEntryComplete(entry)}
+                                title={isCompleted ? '완료 해제' : '완료 표시'}
+                                className={`transition-colors p-0.5 ${
+                                  isCompleted
+                                    ? 'text-[#7A634C]'
+                                    : 'text-[#B0A699] hover:text-[#7A634C]'
+                                }`}
+                              >
+                                <Check className="w-3.5 h-3.5" strokeWidth={2} />
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => startEditingEntry(entry)}
@@ -1578,14 +1667,31 @@ export default function App() {
                             </div>
                           </div>
                         ) : (
-                          /* 일반 기록은 기존과 동일하게 본문 우측 끝 한 줄에 정렬 */
                           <div className="flex items-start justify-between gap-3">
                             {entry.text && (
-                              <p className="flex-1 text-sm text-[#3D352E] not-italic leading-relaxed whitespace-pre-wrap break-words">
+                              <p
+                                className={`flex-1 text-sm not-italic leading-relaxed whitespace-pre-wrap break-words transition-colors ${
+                                  isCompleted
+                                    ? 'line-through text-[#A89F94]'
+                                    : 'text-[#3D352E]'
+                                }`}
+                              >
                                 {entry.text}
                               </p>
                             )}
                             <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                              <button
+                                type="button"
+                                onClick={() => toggleEntryComplete(entry)}
+                                title={isCompleted ? '완료 해제' : '완료 표시'}
+                                className={`transition-colors p-0.5 ${
+                                  isCompleted
+                                    ? 'text-[#7A634C]'
+                                    : 'text-[#B0A699] hover:text-[#7A634C]'
+                                }`}
+                              >
+                                <Check className="w-3.5 h-3.5" strokeWidth={2} />
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => startEditingEntry(entry)}
@@ -1632,7 +1738,7 @@ export default function App() {
                       handleGeneratePrayer();
                     }
                   }}
-                  placeholder="예: 나쁜 말을 하지 않게 기도, OO의 대학 합격"
+                  placeholder="예: 마음의 평안을 위한 기도, OO의 건강을 위한 기도."
                   className="flex-1 text-xs bg-[#FAF8F5] border border-[#EAE5DC] rounded-xl px-3 py-2.5 text-[#3D352E] placeholder-[#B0A699] focus:outline-none focus:border-[#C8B9A6]"
                 />
                 <button
