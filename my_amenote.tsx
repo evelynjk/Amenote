@@ -10,7 +10,6 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  Target,
   X,
   Download,
   LogOut,
@@ -523,9 +522,61 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // [수정 6] 로그인 시 기기(localStorage)에 남아있던 오프라인 작성 데이터를 자동으로 클라우드로 업로드 후 병합
   useEffect(() => {
     if (!supabase || !session) return;
-    async function loadCloudData() {
+    async function syncAndLoadCloudData() {
+      // 1. 기기에만 저장된 로컬 데이터 확인 및 클라우드 업로드
+      try {
+        const localEntries = JSON.parse(localStorage.getItem('amenote_v1_entries') || '[]');
+        if (localEntries.length > 0) {
+          const toInsertEntries = localEntries.map((e) => ({
+            user_id: session.user.id,
+            date: e.date,
+            time: e.time,
+            type: e.type || 'note',
+            text: e.text || '',
+            image: e.image || null,
+            verse_line: e.verseLine || null
+          }));
+          const { error } = await supabase.from('amenote_entries').insert(toInsertEntries);
+          if (!error) {
+            localStorage.removeItem('amenote_v1_entries');
+          }
+        }
+
+        const localPrayers = JSON.parse(localStorage.getItem('amenote_v1_prayer_history') || '[]');
+        if (localPrayers.length > 0) {
+          const toInsertPrayers = localPrayers.map((p) => ({
+            user_id: session.user.id,
+            date: p.date,
+            time: p.time,
+            title: p.title,
+            verse: p.verse,
+            reference: p.reference,
+            text: p.text
+          }));
+          const { error } = await supabase.from('amenote_prayers').insert(toInsertPrayers);
+          if (!error) {
+            localStorage.removeItem('amenote_v1_prayer_history');
+          }
+        }
+
+        const localDdays = JSON.parse(localStorage.getItem('amenote_v1_ddays') || '[]');
+        if (localDdays.length > 0) {
+          const toInsertDdays = localDdays.map((d) => ({
+            user_id: session.user.id,
+            title: d.title,
+            date: d.date
+          }));
+          const { error } = await supabase.from('amenote_ddays').insert(toInsertDdays);
+          if (!error) {
+            localStorage.removeItem('amenote_v1_ddays');
+          }
+        }
+      } catch {}
+
+      // 2. 클라우드에서 최신 전체 데이터 불러오기
       const { data: entData } = await supabase
         .from('amenote_entries')
         .select('*')
@@ -543,6 +594,7 @@ export default function App() {
           }))
         );
       }
+
       const { data: prayData } = await supabase
         .from('amenote_prayers')
         .select('*')
@@ -560,6 +612,7 @@ export default function App() {
           }))
         );
       }
+
       const { data: ddayData } = await supabase.from('amenote_ddays').select('*');
       if (ddayData) {
         setDdays(
@@ -571,7 +624,7 @@ export default function App() {
         );
       }
     }
-    loadCloudData();
+    syncAndLoadCloudData();
   }, [session]);
 
   useEffect(() => {
@@ -661,13 +714,12 @@ export default function App() {
     showToast('로그아웃 되었습니다');
   };
 
+  // [수정 3] 공유 시 제목이나 슬로건 없이 오직 주소(URL)만 전달되도록 수정
   const handleShareAppLink = async () => {
     const appUrl = window.location.origin;
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'my Amenote',
-          text: 'my day. my story. my prayer.',
           url: appUrl
         });
         return;
@@ -781,15 +833,39 @@ export default function App() {
     showToast('기록이 삭제되었습니다');
   };
 
-  const handleDownloadLightboxImage = () => {
+  // [수정 4] 아이폰에서도 갤러리에 바로 저장할 수 있도록 공유 시트(이미지 저장) 및 Blob 다운로드 지원
+  const handleDownloadLightboxImage = async () => {
     if (!lightboxEntry?.image) return;
-    const link = document.createElement('a');
-    link.href = lightboxEntry.image;
-    link.download = `my_Amenote_${lightboxEntry.date}_${lightboxEntry.id}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('사진이 다운로드되었습니다');
+    const fileName = `my_Amenote_${lightboxEntry.date}_${lightboxEntry.id}.jpg`;
+    try {
+      const response = await fetch(lightboxEntry.image);
+      const blob = await response.blob();
+      const file = new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+
+      // 모바일(아이폰 등)에서는 공유 시트를 통해 '이미지 저장'을 누르면 사진첩(갤러리)에 바로 저장됨
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file]
+        });
+        return;
+      }
+
+      // PC 및 일반 브라우저에서는 Blob URL로 파일 다운로드
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      showToast('사진이 다운로드되었습니다');
+    } catch (err) {
+      if (err?.name !== 'AbortError') {
+        showToast('이미지를 길게 눌러 사진에 저장해 주세요');
+      }
+    }
   };
 
   const handleDeleteLightboxImage = async () => {
@@ -1129,21 +1205,22 @@ export default function App() {
       <div className="max-w-xl mx-auto px-4 pt-6">
         {/* 상단 헤더 & 미니 로그인/공유 컨트롤 */}
         <header className="mb-4 space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <h1 className="text-2xl font-medium tracking-tight text-[#3D352E] leading-tight">
+          <div className="flex items-start justify-between gap-1.5">
+            <div className="min-w-0">
+              <h1 className="text-[22px] sm:text-2xl font-medium tracking-tight text-[#3D352E] leading-tight whitespace-nowrap">
                 my Amenote
               </h1>
-              <p className="text-xs font-normal text-[#8C7F70] mt-0.5 tracking-normal">
+              {/* [수정 1] 아이폰 화면에서도 슬로건이 줄바꿈 없이 한 줄로 나오도록 whitespace-nowrap 및 크기 조정 */}
+              <p className="text-[11px] sm:text-xs font-normal text-[#8C7F70] mt-0.5 tracking-tight whitespace-nowrap">
                 my day. my story. my prayer.
               </p>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               <div className="flex bg-[#F1ECE4] p-0.5 rounded-full border border-[#E5DEC9]">
                 <button
                   type="button"
                   onClick={() => setCalendarMode('week')}
-                  className={`px-2.5 py-1 text-xs rounded-full transition-colors ${
+                  className={`px-2 sm:px-2.5 py-1 text-xs rounded-full transition-colors whitespace-nowrap ${
                     calendarMode === 'week'
                       ? 'bg-white text-[#3D352E] font-medium shadow-2xs'
                       : 'text-[#8C7F70]'
@@ -1154,7 +1231,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setCalendarMode('month')}
-                  className={`px-2.5 py-1 text-xs rounded-full transition-colors ${
+                  className={`px-2 sm:px-2.5 py-1 text-xs rounded-full transition-colors whitespace-nowrap ${
                     calendarMode === 'month'
                       ? 'bg-white text-[#3D352E] font-medium shadow-2xs'
                       : 'text-[#8C7F70]'
@@ -1166,7 +1243,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => openDdayModal()}
-                className="px-3 py-1.5 text-xs font-medium bg-white border border-[#EAE5DC] rounded-full text-[#5C4F42] hover:bg-[#F5F0E8] transition-colors"
+                className="px-2.5 sm:px-3 py-1.5 text-xs font-medium bg-white border border-[#EAE5DC] rounded-full text-[#5C4F42] hover:bg-[#F5F0E8] transition-colors whitespace-nowrap"
               >
                 D-Day
               </button>
@@ -1218,9 +1295,9 @@ export default function App() {
                     key={item.id}
                     type="button"
                     onClick={() => setSelectedDate(item.date)}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white border border-[#EAE5DC] text-[#8C6D53] hover:border-[#C7B9A7] transition text-[10.5px] font-medium whitespace-nowrap"
+                    className="inline-flex items-center px-2 py-0.5 rounded-full bg-white border border-[#EAE5DC] text-[#8C6D53] hover:border-[#C7B9A7] transition text-[10.5px] font-medium whitespace-nowrap"
                   >
-                    <Target className="w-2.5 h-2.5 text-[#8C6D53] shrink-0" strokeWidth={1.75} />
+                    {/* [수정 5] D-day 앞 타겟 아이콘 삭제 */}
                     <span>{formatSingleDdayLabel(item)}</span>
                   </button>
                 ))}
@@ -1427,6 +1504,7 @@ export default function App() {
               <div className="space-y-2.5">
                 {dailyEntries.map((entry) => {
                   const isEditing = editingEntryId === entry.id;
+                  const isPrayerCard = entry.type === 'prayer' || Boolean(entry.verseLine);
                   return (
                     <div key={entry.id} className="flex items-start gap-2.5">
                       <span className="text-[11px] text-[#9C8F80] pt-2.5 w-11 shrink-0 text-right font-medium tabular-nums">
@@ -1437,8 +1515,8 @@ export default function App() {
                           <img
                             src={entry.image}
                             alt="첨부 이미지"
-                            onDoubleClick={() => setLightboxEntry(entry)}
-                            title="더블클릭하여 크게 보기 및 다운로드"
+                            onClick={() => setLightboxEntry(entry)}
+                            title="클릭하여 크게 보기 및 저장"
                             className="w-full max-h-72 object-cover rounded-xl mb-2 border border-[#F0ECE3] cursor-pointer"
                           />
                         )}
@@ -1467,38 +1545,63 @@ export default function App() {
                               </button>
                             </div>
                           </div>
-                        ) : (
+                        ) : isPrayerCard ? (
+                          /* [수정 2] 기도문 '오늘의 기록' 카드는 수정/삭제 버튼이 본문 우측 하단에 배치 */
                           <div>
                             {entry.verseLine && (
                               <div className="border-l-2 border-[#7A634C] pl-2.5 mb-2 text-xs text-[#5C4F42] leading-relaxed">
                                 {entry.verseLine}
                               </div>
                             )}
-                            {/* 본문 텍스트와 수정/삭제 버튼을 우측 끝(한 줄)으로 정렬 */}
-                            <div className="flex items-start justify-between gap-3">
-                              {entry.text && (
-                                <p className="flex-1 text-sm text-[#3D352E] not-italic leading-relaxed whitespace-pre-wrap break-words">
-                                  {entry.text}
-                                </p>
-                              )}
-                              <div className="flex items-center gap-1 shrink-0 pt-0.5">
-                                <button
-                                  type="button"
-                                  onClick={() => startEditingEntry(entry)}
-                                  title="수정"
-                                  className="text-[#B0A699] hover:text-[#7A634C] transition-colors p-0.5"
-                                >
-                                  <Pencil className="w-3.5 h-3.5" strokeWidth={1.75} />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => deleteEntry(entry.id)}
-                                  title="삭제"
-                                  className="text-[#B0A699] hover:text-[#B85C5C] transition-colors p-0.5"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />
-                                </button>
-                              </div>
+                            {entry.text && (
+                              <p className="text-sm text-[#3D352E] not-italic leading-relaxed whitespace-pre-wrap break-words">
+                                {entry.text}
+                              </p>
+                            )}
+                            <div className="flex items-center justify-end gap-1.5 mt-1.5">
+                              <button
+                                type="button"
+                                onClick={() => startEditingEntry(entry)}
+                                title="수정"
+                                className="text-[#B0A699] hover:text-[#7A634C] transition-colors p-0.5"
+                              >
+                                <Pencil className="w-3.5 h-3.5" strokeWidth={1.75} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteEntry(entry.id)}
+                                title="삭제"
+                                className="text-[#B0A699] hover:text-[#B85C5C] transition-colors p-0.5"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* 일반 기록은 기존과 동일하게 본문 우측 끝 한 줄에 정렬 */
+                          <div className="flex items-start justify-between gap-3">
+                            {entry.text && (
+                              <p className="flex-1 text-sm text-[#3D352E] not-italic leading-relaxed whitespace-pre-wrap break-words">
+                                {entry.text}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                              <button
+                                type="button"
+                                onClick={() => startEditingEntry(entry)}
+                                title="수정"
+                                className="text-[#B0A699] hover:text-[#7A634C] transition-colors p-0.5"
+                              >
+                                <Pencil className="w-3.5 h-3.5" strokeWidth={1.75} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteEntry(entry.id)}
+                                title="삭제"
+                                className="text-[#B0A699] hover:text-[#B85C5C] transition-colors p-0.5"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                              </button>
                             </div>
                           </div>
                         )}
@@ -1822,7 +1925,7 @@ export default function App() {
             <button
               type="button"
               onClick={handleDownloadLightboxImage}
-              title="사진 다운로드"
+              title="사진 저장"
               className="w-10 h-10 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/25 text-white transition"
             >
               <Download className="w-4 h-4" strokeWidth={1.75} />
