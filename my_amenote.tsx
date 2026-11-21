@@ -497,6 +497,24 @@ const getCurrentTimeString = () => {
   return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 };
 
+const COMPLETED_IDS_STORAGE_KEY = 'amenote_v1_completed_ids';
+
+const readCompletedIds = () => {
+  try {
+    const raw = localStorage.getItem(COMPLETED_IDS_STORAGE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(arr) ? arr.map(String) : []);
+  } catch {
+    return new Set();
+  }
+};
+
+const writeCompletedIds = (idSet) => {
+  try {
+    localStorage.setItem(COMPLETED_IDS_STORAGE_KEY, JSON.stringify(Array.from(idSet)));
+  } catch {}
+};
+
 // ==========================================
 // 5. 메인 App 컴포넌트
 // ==========================================
@@ -519,7 +537,12 @@ export default function App() {
   const [entries, setEntries] = useState(() => {
     try {
       const saved = localStorage.getItem('amenote_v1_entries');
-      return saved ? JSON.parse(saved) : [];
+      const parsed = saved ? JSON.parse(saved) : [];
+      const completedSet = readCompletedIds();
+      return parsed.map((e) => ({
+        ...e,
+        completed: Boolean(e.completed) || completedSet.has(String(e.id))
+      }));
     } catch {
       return [];
     }
@@ -640,6 +663,7 @@ export default function App() {
         .select('*')
         .order('created_at', { ascending: false });
       if (entData) {
+        const completedSet = readCompletedIds();
         setEntries(
           entData.map((e) => ({
             id: e.id,
@@ -649,7 +673,7 @@ export default function App() {
             text: e.text,
             image: e.image,
             verseLine: e.verse_line,
-            completed: Boolean(e.completed)
+            completed: Boolean(e.completed) || completedSet.has(String(e.id))
           }))
         );
       }
@@ -825,6 +849,7 @@ export default function App() {
     e.target.value = '';
   };
 
+  // [수정 1] 클라우드 저장 시 DB 스키마와 호환되도록 페이로드 정리
   const handleAddEntry = async (e) => {
     e.preventDefault();
     if (!inputText.trim() && !pendingImage) return;
@@ -837,12 +862,20 @@ export default function App() {
       completed: false
     };
     if (supabase && session) {
+      const insertPayload = {
+        user_id: session.user.id,
+        date: baseItem.date,
+        time: baseItem.time,
+        type: baseItem.type,
+        text: baseItem.text,
+        image: baseItem.image
+      };
       const { data, error } = await supabase
         .from('amenote_entries')
-        .insert([{ ...baseItem, user_id: session.user.id }])
+        .insert([insertPayload])
         .select()
         .single();
-      if (error) {
+      if (error || !data) {
         showToast('클라우드 저장 오류');
         return;
       }
@@ -854,12 +887,30 @@ export default function App() {
     setPendingImage(null);
   };
 
-  // [수정] 오늘의 기록 완료(취소선) 토글
+  // [수정 2] 완료(취소선) 상태 영속 저장 (로컬 완료 ID 목록 + 클라우드 동기화)
   const toggleEntryComplete = async (entry) => {
     const nextCompleted = !Boolean(entry.completed);
-    setEntries((prev) =>
-      prev.map((item) => (item.id === entry.id ? { ...item, completed: nextCompleted } : item))
-    );
+    const idKey = String(entry.id);
+    const completedSet = readCompletedIds();
+    if (nextCompleted) {
+      completedSet.add(idKey);
+    } else {
+      completedSet.delete(idKey);
+    }
+    writeCompletedIds(completedSet);
+
+    setEntries((prev) => {
+      const updated = prev.map((item) =>
+        item.id === entry.id ? { ...item, completed: nextCompleted } : item
+      );
+      if (!session) {
+        try {
+          localStorage.setItem('amenote_v1_entries', JSON.stringify(updated));
+        } catch {}
+      }
+      return updated;
+    });
+
     if (supabase && session) {
       try {
         await supabase
@@ -896,6 +947,10 @@ export default function App() {
   };
 
   const deleteEntry = async (id) => {
+    const completedSet = readCompletedIds();
+    completedSet.delete(String(id));
+    writeCompletedIds(completedSet);
+
     if (supabase && session) {
       const { error } = await supabase.from('amenote_entries').delete().eq('id', id);
       if (error) {
@@ -989,7 +1044,7 @@ export default function App() {
         .insert([{ ...basePrayer, user_id: session.user.id }])
         .select()
         .single();
-      if (error) {
+      if (error || !data) {
         showToast('기도문 저장 오류');
         return;
       }
@@ -1073,7 +1128,7 @@ export default function App() {
         ])
         .select()
         .single();
-      if (error) {
+      if (error || !data) {
         showToast('기록 전송 실패');
         return;
       }
@@ -1160,7 +1215,7 @@ export default function App() {
           .insert([{ user_id: session.user.id, title: cleanTitle, date: targetDate }])
           .select()
           .single();
-        if (error) {
+        if (error || !data) {
           showToast('디데이 추가 실패');
           return;
         }
